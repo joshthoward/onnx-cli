@@ -1,7 +1,9 @@
 import argparse
 import logging
+import sys
 
 from onnx_cli import __version__
+from onnx_cli.subcommand_support import *
 
 
 logging_lkp = {
@@ -21,30 +23,6 @@ command_lkp = {
 }
 
 
-def build_handler(args):
-    """Entrypoint for the `build` subcommand
-    """
-    raise NotImplementedError("To be implemented")
-
-
-def run_handler(args):
-    """Entrypoint for the `run` subcommand
-    """
-    raise NotImplementedError("To be implemented")
-
-
-def import_handler(args):
-    """Entrypoint for the `import` subcommand
-    """
-    raise NotImplementedError("To be implemented")
-
-
-def export_handler(args):
-    """Entrypoint for the `export` subcommand
-    """
-    raise NotImplementedError("To be implemented")
-
-
 def main():
     """Entrypoint for the ONNX CLI
     """
@@ -55,7 +33,7 @@ def main():
         epilog="This project is not in production")
 
     # Global arguments
-    parser.add_argument("-v", "--version",
+    parser.add_argument("-v", "--version", action="store_true",
                         help="Print version information and quit")
     parser.add_argument("-l", "--logging", default="warning",
                         choices=logging_lkp.keys(),
@@ -72,6 +50,9 @@ def main():
     export_parser = subparsers.add_parser("export")
 
     args = parser.parse_args()
+    if args.version:
+        print(__version__)
+        sys.exit(0)
 
     # Configure logger
     logging.basicConfig(level=logging_lkp[args.logging],
