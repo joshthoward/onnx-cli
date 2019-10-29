@@ -3,23 +3,19 @@ import logging
 import sys
 
 from onnx_cli import __version__
-from onnx_cli.subcommand_support import *
+from onnx_cli.cmd import *
 
 
-logging_lkp = {
-    "critical": logging.CRITICAL,
-    "error": logging.ERROR,
-    "warning": logging.WARNING,
-    "info": logging.INFO,
-    "debug": logging.DEBUG
-}
-
-
-command_lkp = {
-    "build": build_handler,
-    "run": run_handler,
-    "import": import_handler,
-    "export": export_handler
+cmd_lkp = {
+    "pull": pull_cmd,
+    "push": push_cmd,
+    "build": build_cmd,
+    "import": import_cmd,
+    "export": export_cmd,
+    "config": config_cmd,
+    "remote": remote_cmd,
+    "ls": ls_cmd,
+    "rm": rm_cmd
 }
 
 
@@ -30,41 +26,81 @@ def main():
     parser = argparse.ArgumentParser(
         prog="onnx",
         description="A Command Line Interface for interacting with ONNX models",
-        epilog="This project is not in production")
-
-    # Global arguments
+        epilog="test\n")
     parser.add_argument("-v", "--version", action="store_true",
-                        help="Print version information and quit")
-    parser.add_argument("-l", "--logging", default="warning",
-                        choices=logging_lkp.keys(),
-                        help="Set logging level for command")
+        help="Print version information and quit")
+
+    # Subcommands
     subparsers = parser.add_subparsers(dest="command")
 
-    build_parser = subparsers.add_parser("build")
-    build_parser.add_argument("-f", "--from", 
-        choices=["coreml", "keras", "lightgbm", "sklearn", "sparkml", "tensorflow", "xgboost"],
-        help="Set model type from")
+    pull_parser = subparsers.add_parser("pull",
+        help="Pull model from a remote registry")
+    pull_parser.add_argument("name", type=str,
+        help="The fully qualified name of the model")
 
-    run_parser = subparsers.add_parser("run")
-    import_parser = subparsers.add_parser("import")
-    export_parser = subparsers.add_parser("export")
+    push_parser = subparsers.add_parser("push",
+        help="Push model to a remote registry")
+    push_parser.add_argument("name", type=str,
+        help="The fully qualified name of the model")
+
+    build_parser = subparsers.add_parser("build",
+        help="Build a model from an external framework")
+    build_parser.add_argument("name", type=str,
+        help="The fully qualified name of the model")
+    build_parser.add_argument("path", type=str,
+        help="The path to the external framework model")
+
+    import_parser = subparsers.add_parser("import",
+        help="Import model to the local registry")
+    import_parser.add_argument("path", type=str,
+        help="The path to the model")
+    import_parser.add_argument("name", type=str,
+        help="The fully qualified name of the model")
+
+    export_parser = subparsers.add_parser("export",
+        help="Export model from the local registry")
+    export_parser.add_argument("name", type=str,
+        help="The fully qualified name of the model")
+    export_parser.add_argument("path", type=str,
+        help="The path to the model")
+
+    config_parser = subparsers.add_parser("config",
+        help="Set configuration options")
+    config_parser.add_argument("key", type=str,
+        help="Option key")
+    config_parser.add_argument("value", type=str,
+        help="Option value")
+
+    remote_parser = subparsers.add_parser("remote",
+        help="Configure remote registries")
+    remote_subparser = remote_parser.add_subparsers(dest="subcommand")
+    remote_ls_parser = remote_subparser.add_parser("ls",
+        help="List remote registries")
+    remote_rm_parser = remote_subparser.add_parser("rm",
+        help="Remove remote registry")
+    remote_rm_parser.add_argument("remote", type=str,
+        help="Name of the remote registry")
+    remote_add_parser = remote_subparser.add_parser("add",
+        help="Add remote registry")
+    remote_add_parser.add_argument("remote", type=str,
+        help="Name of the remote registry")
+    remote_add_parser.add_argument("url", type=str,
+        help="URL of the remote registry")
+
+    ls_parser = subparsers.add_parser("ls",
+        help="List models from the local registry")
+
+    rm_parser = subparsers.add_parser("rm",
+        help="Remove model from the local registry")
 
     args = parser.parse_args()
     if args.version:
         print(__version__)
-        sys.exit(0)
+        return 0
 
-    # Configure logger
-    logging.basicConfig(level=logging_lkp[args.logging],
-                        format="%(asctime)s:%(levelname)s:%(message)s")
-    logger = logging.getLogger("onnx")
-    logger.debug("Initialized logger")
-
-    # Execute subcommand
-    command = command_lkp[args.command]
-    logger.debug("Executing the {0} subcommand".format(args.command))
-    command(args)
+    cmd = cmd_lkp[args.command]
+    cmd(args)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
